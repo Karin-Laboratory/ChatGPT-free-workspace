@@ -19,19 +19,6 @@ npm run build   # dist/ に出力
 
 ## 公開の仕組み
 
-公開は Cloudflare Workers Builds が行います (Cloudflare ダッシュボードで
-`claude-workspace` を接続済み)。`main` への push で `calc/` 以下に変更があると、
-ビルドと `wrangler deploy` が走り、`calc-claude.karin-lab.com` に反映されます。
-GitHub Actions (リポジトリ直下の `.github/workflows/calc.yml`) はテストとビルドの確認用です。
-
-### Workers Builds の設定
-
-| 項目 | 値 |
-| --- | --- |
-| プロジェクト名 | `calc-claude` (`wrangler.jsonc` の `name` と一致させる) |
-| ルート ディレクトリ | `calc` |
-| ビルド コマンド | `npm ci && npm test && npm run build` |
-| デプロイ コマンド | `npx wrangler deploy` |
-| ビルド監視パス | `calc/*` |
-
-`karin-lab.com` のゾーンが同じ Cloudflare アカウントにあること。
+リポジトリ共通のワークフロー (`../.github/workflows/deploy.yml`) が、`main` への push で
+このフォルダに変更があるときだけテスト・ビルド・公開を行い、
+`calc-claude.karin-lab.com` に反映します。設定は [リポジトリの README](../README.md) を参照してください。
