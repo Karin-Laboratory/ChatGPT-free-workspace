@@ -19,16 +19,19 @@ npm run build   # dist/ に出力
 
 ## 公開の仕組み
 
-`main` への push (`calc/` 以下の変更時) で GitHub Actions (リポジトリ直下の `.github/workflows/calc.yml`) が
-テスト → ビルド → `wrangler deploy` を実行し、Cloudflare Workers の
-静的アセットとして `calc-claude.karin-lab.com` に公開します。
-プルリクエストではテストとビルドのみ実行します。
+公開は Cloudflare Workers Builds が行います (Cloudflare ダッシュボードで
+`claude-workspace` を接続済み)。`main` への push で `calc/` 以下に変更があると、
+ビルドと `wrangler deploy` が走り、`calc-claude.karin-lab.com` に反映されます。
+GitHub Actions (リポジトリ直下の `.github/workflows/calc.yml`) はテストとビルドの確認用です。
 
-### 初回セットアップ
+### Workers Builds の設定
 
-1. Cloudflare に `karin-lab.com` のゾーンがあることを確認する
-2. Cloudflare の API トークンを作成する (テンプレート「Edit Cloudflare Workers」)
-3. GitHub リポジトリの Settings → Secrets and variables → Actions に登録する
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID`
-4. `main` に push する (初回デプロイ時にカスタムドメインの DNS レコードと証明書が自動作成される)
+| 項目 | 値 |
+| --- | --- |
+| プロジェクト名 | `calc-claude` (`wrangler.jsonc` の `name` と一致させる) |
+| ルート ディレクトリ | `calc` |
+| ビルド コマンド | `npm ci && npm test && npm run build` |
+| デプロイ コマンド | `npx wrangler deploy` |
+| ビルド監視パス | `calc/*` |
+
+`karin-lab.com` のゾーンが同じ Cloudflare アカウントにあること。
