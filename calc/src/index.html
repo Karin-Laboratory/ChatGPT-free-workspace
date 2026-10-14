@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <title>関数電卓</title>
+  <meta name="description" content="三角関数・対数・階乗などに対応したブラウザ関数電卓" />
+  <link rel="stylesheet" href="./style.css" />
+  <script type="module" src="./main.js"></script>
+</head>
+<body>
+  <main class="calc" aria-label="関数電卓">
+    <header class="bar">
+      <h1>関数電卓</h1>
+      <button type="button" id="angle" class="chip" aria-label="角度モード切替">DEG</button>
+    </header>
+
+    <section class="display" aria-live="polite">
+      <ol id="history" class="history" aria-label="履歴"></ol>
+      <input id="expr" class="expr" type="text" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="数式" placeholder="0" />
+      <output id="result" class="result">0</output>
+      <p id="error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section class="pad" id="pad">
+      <button data-ins="sin(" class="fn">sin</button>
+      <button data-ins="cos(" class="fn">cos</button>
+      <button data-ins="tan(" class="fn">tan</button>
+      <button data-ins="ln(" class="fn">ln</button>
+      <button data-ins="log(" class="fn">log</button>
+
+      <button data-ins="asin(" class="fn">sin⁻¹</button>
+      <button data-ins="acos(" class="fn">cos⁻¹</button>
+      <button data-ins="atan(" class="fn">tan⁻¹</button>
+      <button data-ins="exp(" class="fn">eˣ</button>
+      <button data-ins="10^" class="fn">10ˣ</button>
+
+      <button data-ins="sqrt(" class="fn">√</button>
+      <button data-ins="^2" class="fn">x²</button>
+      <button data-ins="^" class="fn">xʸ</button>
+      <button data-ins="!" class="fn">n!</button>
+      <button data-ins="abs(" class="fn">|x|</button>
+
+      <button data-ins="pi" class="fn">π</button>
+      <button data-ins="e" class="fn">e</button>
+      <button data-ins="(" class="fn">(</button>
+      <button data-ins=")" class="fn">)</button>
+      <button data-ins="ans" class="fn">Ans</button>
+
+      <button data-ins="7" class="num">7</button>
+      <button data-ins="8" class="num">8</button>
+      <button data-ins="9" class="num">9</button>
+      <button data-act="back" class="act">⌫</button>
+      <button data-act="clear" class="act">AC</button>
+
+      <button data-ins="4" class="num">4</button>
+      <button data-ins="5" class="num">5</button>
+      <button data-ins="6" class="num">6</button>
+      <button data-ins="*" class="op">×</button>
+      <button data-ins="/" class="op">÷</button>
+
+      <button data-ins="1" class="num">1</button>
+      <button data-ins="2" class="num">2</button>
+      <button data-ins="3" class="num">3</button>
+      <button data-ins="+" class="op">+</button>
+      <button data-ins="-" class="op">−</button>
+
+      <button data-ins="0" class="num">0</button>
+      <button data-ins="." class="num">.</button>
+      <button data-ins="%" class="num">%</button>
+      <button data-act="neg" class="num">±</button>
+      <button data-act="eval" class="eq">=</button>
+    </section>
+  </main>
+</body>
+</html>

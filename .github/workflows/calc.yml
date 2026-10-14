@@ -1,0 +1,62 @@
+name: calc - test, build and deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "calc/**"
+      - ".github/workflows/calc.yml"
+  pull_request:
+    paths:
+      - "calc/**"
+      - ".github/workflows/calc.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: calc-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: calc
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: calc/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: calc-dist
+          path: calc/dist
+          retention-days: 7
+
+  deploy:
+    # main への push (または手動実行) のときだけ本番へ公開する
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: calc/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: calc-dist
+          path: calc/dist
+      - run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
