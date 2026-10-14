@@ -1,0 +1,67 @@
+name: Build Scientific Calculator for Windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scientific-calculator/**"
+      - ".github/workflows/build-scientific-calculator.yml"
+  pull_request:
+    paths:
+      - "scientific-calculator/**"
+      - ".github/workflows/build-scientific-calculator.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Windows x64 EXE
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x64
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Build standalone executable
+        run: >-
+          python -m PyInstaller
+          --noconfirm
+          --clean
+          --onefile
+          --windowed
+          --name ScientificCalculator
+          --distpath dist
+          scientific-calculator/main.py
+
+      - name: Verify executable
+        shell: pwsh
+        run: |
+          $exe = "dist/ScientificCalculator.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Build output not found: $exe"
+          }
+          $item = Get-Item $exe
+          if ($item.Length -lt 100000) {
+            throw "Executable is unexpectedly small: $($item.Length) bytes"
+          }
+          "EXE: $($item.FullName)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "Size: $($item.Length) bytes" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scientific-calculator-windows-x64
+          path: dist/ScientificCalculator.exe
+          if-no-files-found: error
+          retention-days: 14
