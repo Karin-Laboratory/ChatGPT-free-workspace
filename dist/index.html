@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>アプリ一覧</title>
+  <style>
+    :root { --bg: #f4f5f7; --panel: #fff; --ink: #1b1f27; --muted: #6a7280; --line: #dfe3ea; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #14171c; --panel: #1d2128; --ink: #eceff4; --muted: #98a1b0; --line: #2b313b; } }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+    main { max-width: 640px; margin: 0 auto; padding: 32px 16px; }
+    h1 { font-size: 20px; margin: 0 0 20px; }
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    a { display: grid; gap: 4px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; color: inherit; text-decoration: none; }
+    a:hover { border-color: var(--muted); }
+    span { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>アプリ一覧</h1>
+    <ul>
+      <li><a href="./calc/"><strong>関数電卓</strong><span>三角関数・対数・階乗に対応した関数電卓</span></a></li>
+    </ul>
+  </main>
+</body>
+</html>

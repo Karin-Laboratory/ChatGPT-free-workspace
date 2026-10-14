@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "calc",
+      "title": "関数電卓",
+      "path": "/calc/"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # __TITLE__
 
-https://__APP__-claude.karin-lab.com
+https://apps.karin-lab.com/__APP__/
 
-`main` へ push すると、共通ワークフロー (`.github/workflows/deploy.yml`) が
-このフォルダのテスト・ビルド・公開を自動で行います。
+`main` へ push すると自動で公開されます (Cloudflare Workers Builds)。
+`public/` にビルド不要の静的ファイルを置きます。

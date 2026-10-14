@@ -1,19 +1,17 @@
 {
-  "name": "calc-claude",
+  "name": "calc",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "関数電卓 (calc-claude.karin-lab.com)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "deploy": "npm run build && wrangler deploy"
+    "test": "vitest run"
   },
   "devDependencies": {
     "vite": "^6.0.0",
-    "vitest": "^3.0.0",
-    "wrangler": "^4.0.0"
-  }
+    "vitest": "^3.0.0"
+  },
+  "description": "関数電卓"
 }

@@ -1,37 +1,42 @@
 # claude-workspace
 
-Claude との会話で作った Web アプリを、フォルダ単位で管理して Cloudflare Workers に公開するモノレポ。
+Claude との会話で作った Web アプリを、フォルダ単位で管理して Cloudflare Workers で公開するモノレポ。
+新しいアプリは、Claude に「〇〇アプリを作って、公開して」と頼むだけで追加できる。
 
 | アプリ | 公開URL |
 | --- | --- |
-| [calc](calc/) 関数電卓 | https://calc-claude.karin-lab.com |
+| [calc](calc/) 関数電卓 | https://apps.karin-lab.com/calc/ |
 
-- 1アプリ = 直下の1フォルダ。公開URLは `https://<フォルダ名>-claude.karin-lab.com`
-- `main` へ push すると、変更のあったアプリだけが自動でテスト・ビルド・公開される
-- 新しいアプリは `scripts/new-app.sh <名前> "<タイトル>"` で `_template/` から作る
-- 運用ルールは [CLAUDE.md](CLAUDE.md) を参照
+一覧ページ: https://apps.karin-lab.com/
+
+## 仕組み
+
+- 1アプリ = 直下の1フォルダ。公開URLは `https://apps.karin-lab.com/<フォルダ名>/`
+- Cloudflare の Worker は1つだけ。全アプリの完成品 (`dist/`) をまとめて配信する
+- `main` へ push すると、Cloudflare Workers Builds が自動で公開する (GitHub Actions も API トークンも使わない)
+- 新しいアプリを足しても、Cloudflare の画面操作・トークン登録・コマンド入力は要らない
 
 ## 初回セットアップ (1回だけ)
 
-アプリごとの設定は不要。以下はリポジトリ全体で1回だけ行う。
+1. Cloudflare ダッシュボード → Workers & Pages → Create → Import a repository (Continue with GitHub)
+2. このリポジトリ (`claude-workspace`) を選ぶ
+3. 設定は何も変えずに「デプロイ」を押す
+   (プロジェクト名はリポジトリ名のままでよい。`wrangler.jsonc` の `name` と同じ)
 
-1. Cloudflare ダッシュボード → My Profile → API Tokens → Create Token
-   → テンプレート「Edit Cloudflare Workers」。ゾーンは `karin-lab.com` を含める
-   (Account: Workers Scripts 編集 / Zone: Workers Routes 編集 が含まれる)
-2. GitHub のリポジトリ → Settings → Secrets and variables → Actions → New repository secret
-   - `CLOUDFLARE_API_TOKEN`: 手順1で作ったトークン
-   - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare ダッシュボード URL の `dash.cloudflare.com/` の直後の文字列
-3. Actions タブで、失敗している最新の実行を開き「Re-run failed jobs」を押す
-   (登録前に push した分のアプリが、これで公開される)
+公開URLのドメイン (`apps.karin-lab.com`) は `wrangler.jsonc` の `routes` で指定している。
+`karin-lab.com` が同じ Cloudflare アカウントにあれば、初回のデプロイで自動的に割り当てられる。
+自分のドメインが無い場合は、`routes` を消して `"workers_dev": true` にすると
+`https://claude-workspace.<アカウント名>.workers.dev/<フォルダ名>/` で公開される。
 
-## 公開の仕組み
+## 構成
 
-`.github/workflows/deploy.yml` が、直下に `wrangler.jsonc` を持つフォルダをアプリとして扱う。
-
-1. 変更のあったアプリを検出 (`scripts/detect-apps.sh`)
-2. 公開ルールを検証 (`scripts/validate-app.sh`): Worker 名とドメインは `<フォルダ名>-claude` 系のみ許可
-3. `package.json` があれば `npm ci` / `npm test` / `npm run build`
-4. `wrangler deploy` (Worker とカスタムドメインは初回デプロイで自動作成)
-5. 公開URLが HTTP 200 を返すか確認
-
-プルリクエストでは 1〜3 だけを行い、公開はしない。
+```text
+claude-workspace/
+├── calc/            アプリ (1フォルダ = 1アプリ)
+├── _template/       新規アプリの雛形
+├── scripts/         build.mjs (全アプリのテスト・ビルド・dist 生成), new-app.sh (雛形から作成)
+├── dist/            公開される完成品 (build.mjs が生成。手で編集しない)
+├── wrangler.jsonc   Worker の設定 (全アプリで共通)
+├── CLAUDE.md        Claude 向けの運用ルール
+└── .github/workflows/ci.yml   検証専用 (公開はしない)
+```

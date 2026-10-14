@@ -1,0 +1,35 @@
+name: CI
+
+# 検証だけを行う (公開はしない)。公開は Cloudflare Workers Builds が main への push で行う。
+# ここが赤くなったら、公開される dist/ がソースと食い違っているか、テストが落ちている。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 全アプリのテストとビルド
+        run: node scripts/build.mjs
+
+      - name: dist/ が最新か確認 (コミット漏れの検出)
+        run: |
+          if [ -n "$(git status --porcelain -- dist)" ]; then
+            echo "::error::dist/ がソースと一致していません。node scripts/build.mjs を実行して dist/ もコミットしてください"
+            git status --porcelain -- dist
+            exit 1
+          fi
+
+      - name: Worker 設定の検証 (公開はしない)
+        run: npx --yes wrangler@4 deploy --dry-run
