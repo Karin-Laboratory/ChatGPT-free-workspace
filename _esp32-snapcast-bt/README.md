@@ -1,62 +1,45 @@
-# ESP32 Snapcast → Bluetooth bridge
+# Fake Pico (RP2040) Wi-Fi Snapcast → Bluetooth HK speaker
 
-Status: architecture / hardware decision pending (2026-10-20)
+Status: feasibility / hardware identification (2026-10-20)
+This project was initially scoped for ESP32; target changed to the user's previously examined **Pico-compatible RP2040 clone**, revision B2, 2 MiB flash.
+
+## Confirmed hardware vs outstanding
+- Confirmed on target: RP2040 rev B2, 2 MiB flash, RP2 bootloader.
+- NOT confirmed on target: Pico W-compatible CYW43439 Wi-Fi/Bluetooth radio, any radio wiring, onboard antenna.
+- Do not assume a board marketed as Pico/Pico W actually contains or wires up CYW43439.
+- Crucial correction: genuine Pico W's CYW43439 and current software DO support Bluetooth Classic, not just BLE; Arduino-Pico provides a BluetoothAudio A2DP Source implementation. This remains conditional on compatible hardware.
 
 ## Goal
-Receive audio from an existing Snapserver over Wi-Fi and transmit to a Harman Kardon (HK) Bluetooth speaker using A2DP Source. Reuse existing Snapcast server and avoid additional Linux computers.
+Wi-Fi (Snapserver) -> Snapclient protocol -> decoded PCM -> SBC/A2DP Source (BT Classic) -> Harman Kardon speaker.
 
-## Critical hardware constraint
-ESP32-C3 supports Bluetooth LE only and CANNOT provide Classic Bluetooth A2DP Source. ESP32-S3/C6 have the same issue. The original dual-mode ESP32 (e.g. ESP32-WROOM-32 or ESP32-WROVER) supports Bluetooth Classic A2DP Source.
+## Preferred software experiment
+- Arduino-Pico / BluetoothAudio.h A2DP Source example first, on a Pico W-compatible radio setup.
+- Reference: https://arduino-pico.readthedocs.io/en/latest/a2dp.html
+- Reference: https://www.raspberrypi.com/news/new-functionality-bluetooth-for-pico-w/
+- Explore https://github.com/pschatzmann/arduino-snapclient and RP2040 discussion https://github.com/pschatzmann/arduino-snapclient/discussions/13
+- Pico SDK/lwIP/CYW43/BTstack alternative if Arduino solution cannot reliably coexist with Wi-Fi.
+- Phase I: generate PCM tone -> HK via A2DP. Phase II: Wi-Fi TCP reception + tone; phase III: PCM Snapcast receiver; phase IV: jitter/drift/latency.
+- Start with server-side PCM 16-bit stereo, 48 kHz when supported. Disable or reduce codec features until memory measured.
+- RP2040 SRAM ~264 KiB total; 48k 16-bit stereo is 192000 bytes/second. 100 ms PCM buffer ~=19.2 KiB, 500ms ~=96 KiB excluding protocol stacks.
+- Wi-Fi/BT share CYW43439 transport; concurrent use must be tested. A2DP inherently incurs speaker-side latency; measure sync with other Snapcast receivers instead of guaranteeing it.
 
-References:
-- https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/ble/overview.html
-- https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/bluetooth/esp_a2dp.html
+## Mandatory gates before flashing the clone
+1. Inspect photos/markings/BOM or non-destructive probes for wireless module. If absent, standalone Pico cannot receive Wi-Fi or transmit Bluetooth.
+2. Pin-map compatibility with Pico W, verify CYW43 driver can initialize.
+3. USB-only smoke tests without Wi-Fi secrets checked into Git.
+4. A2DP Source paired with exact HK model. Record connection, reconnect, dropout and memory.
+5. Wi-Fi + BT concurrent test prior to Snapcast implementation.
 
-## Candidate designs
-A. Preferred: original ESP32 Wi-Fi Snapclient -> PCM ring buffer -> SBC/A2DP Source -> HK speaker.
-B. Keep ESP32-C3: Wi-Fi Snapclient -> external, explicitly verified A2DP transmitter (via suitable audio interface). Requires extra hardware, likely I2S/audio DAC or analog module depending on transmitter, and validation of clock/interface.
+## Repository plan
+- This folder is prefixed with '_' so the parent repository's Cloudflare build script ignores it.
+- `firmware/` (Arduino-Pico PlatformIO or CMake per verified library compatibility)
+- `docs/hardware.md` (chip identification and wiring, no assumptions)
+- `docs/test-plan.md` (repeatable measurements)
+- `docs/latency.md` (speaker buffering, offset and jitter)
+- `README.md` (this plan)
 
-## Reference sources
-- https://github.com/CarlosDerSeher/snapclient (Snapcast protocol, buffering, synchronization)
-- https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/bluedroid/classic_bt/a2dp_source (A2DP Source)
-- https://github.com/pschatzmann/ESP32-A2DP (alternative library; Classic-BT ESP32 only)
-
-## Planned phases
-1. Confirm exact HK speaker model, ESP32 board type, Flash/PSRAM, and existing Snapserver format.
-2. Baseline A2DP Source paired to HK with generated PCM tone; test reconnect and stable streaming.
-3. Wi-Fi + A2DP coexistence and jitter-buffer/underrun telemetry.
-4. Snapcast connect, discovery (mDNS fallback to static IP), Hello, time sync, settings and PCM chunks.
-5. Integrate decoded PCM with A2DP callback via lock-safe ring buffer, initially 48kHz 16-bit stereo if supported.
-6. Measure Bluetooth output latency against a reference snapclient; expose user-adjustable group/client latency offset as supported, document residual jitter.
-7. Reconnect, watchdog, NVS config, Wi-Fi credentials security; reproducible GitHub Actions firmware build and flash guide.
-
-## Architecture rules
-- Prefer ESP-IDF, pin/tag dependencies, no copied third-party source without license attribution.
-- Keep all secrets out of Git. Prefer NVS/provisioning for Wi-Fi credentials.
-- Never invoke Wi-Fi/network reads or blocking decoder work from A2DP PCM callback.
-- Start with PCM at snapserver for a simple path. Add FLAC/Opus only after measuring CPU and memory budgets.
-- A2DP buffering latency is variable; multi-room synchronization is a hypothesis to test, not a guaranteed property.
-- For C3 hardware, do not attempt to enable unsupported Classic Bluetooth in software.
-
-## Suggested future source tree
-```
-_esp32-snapcast-bt/
-  README.md
-  firmware/
-    CMakeLists.txt
-    main/
-      app_main.c
-      snapcast_client.c
-      audio_ringbuffer.c
-      a2dp_output.c
-      network_config.c
-  docs/
-    hardware-matrix.md
-    validation-plan.md
-```
-
-## Open questions
-- HK speaker exact model and codec capabilities.
-- C3 mandatory or original ESP32 board acceptable?
-- Which Snapserver host, stream codec and sample format?
-- How strict is synchronization with other Snapcast rooms?
+## Decision rules
+- If no wireless chip is present, either use verified external hardware or choose a separate Wi-Fi + BT board; do not fabricate Pico W features.
+- Target choice is Pico clone, not ESP32. No ESP-IDF build targets in this project.
+- Never save Wi-Fi credentials, pairing secrets or private addresses in Git.
+- First produce reproducible test builds and logs, then the end-to-end client.
