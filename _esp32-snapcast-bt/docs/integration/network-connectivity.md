@@ -27,3 +27,7 @@ ssh raspi2 'python3 -c "import socket; s=socket.create_connection((SNAPSERVER_HO
 ssh homeaudio-40-vm 'hostname; date -Is'
 ssh -o HostName=SNAPSERVER_HOST homeaudio-40-vm 'hostname; date -Is'
 ~~~
+
+## Direct SSH from agent-101-vm (2026-10-20)
+
+At the user's direction, retried the specified direct route from the existing `masataka` session: `ssh -o ConnectTimeout=5 192.168.0.40 'hostname; whoami; cat /etc/os-release | sed -n "1,8p"; hostname -I'`. The SSH service reached authentication and rejected the existing credentials with `Permission denied (publickey,password)`. No remote command ran. Therefore SSH transport from agent-101-vm reaches an SSH endpoint, but successful access and the endpoint's identity are not verified. No alternate account/key/password was tried. The earlier raspi2 timeouts and this SSH authentication denial are consistent with different network paths or host-side source restrictions, but the cause cannot be isolated without server-side evidence. No firewall/routing changes were made.

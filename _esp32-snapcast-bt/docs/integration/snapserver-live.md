@@ -39,3 +39,23 @@ ssh -o HostName=SNAPSERVER_HOST homeaudio-40-vm 'hostname; snapserver --version'
 ## 結論
 
 既存streamを変更せずにPCM用追加streamが作れるかはUNKNOWN。serverからの設定ファイル読み取り権限が回復した後、現設定とstream plugin/source supportを確認する。追加streamは作成していない。
+
+## 2026-10-20 直接SSH再試行
+
+`agent-101-vm` 上の既存 `masataka` アカウントから、依頼で指定された直接経路 `ssh 192.168.0.40` を実行した。SSH接続は認証段階まで進み、既存の認証情報は `Permission denied (publickey,password)` で拒否された。ログイン後コマンドは実行されていないため、接続先のhostname、OS、ユーザー、IP、Snapserver状態は確認できていない。別ユーザー・別鍵・パスワードは試していない。
+
+この結果はTCP/SSHサービスとの通信が成立したことを示すが、接続先ホストの身元や認証成功を証明しない。依頼文記載の「接続経路確認済み」と今回の認証結果に差があるため、現時点のライブ調査は認証で停止している。既存のraspi2からの候補ポートtimeout結果は前記の通りで、Snapserver設定・JSON-RPC・クライアント情報は引き続き未取得。
+
+実行コマンド:
+
+~~~sh
+ssh -o ConnectTimeout=5 192.168.0.40 'hostname; whoami; cat /etc/os-release | sed -n "1,8p"; hostname -I'
+~~~
+
+結果:
+
+~~~text
+Permission denied, please try again.
+Permission denied, please try again.
+masataka@192.168.0.40: Permission denied (publickey,password).
+~~~

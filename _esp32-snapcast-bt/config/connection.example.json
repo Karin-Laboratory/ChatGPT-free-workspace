@@ -30,6 +30,8 @@
   "evidence": {
     "venue_peer_name_confirmed": true,
     "venue_peer_address_recorded_locally_only": true,
+    "snapserver_ssh_endpoint_reached_from_agent_101_vm": true,
+    "snapserver_ssh_authentication_succeeded": false,
     "snapserver_settings_confirmed": false,
     "pico_wifi_bluetooth_hardware_confirmed": false
   }
