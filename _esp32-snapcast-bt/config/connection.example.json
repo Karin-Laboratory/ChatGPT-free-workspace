@@ -32,6 +32,8 @@
     "venue_peer_address_recorded_locally_only": true,
     "snapserver_ssh_endpoint_reached_from_agent_101_vm": true,
     "snapserver_ssh_authentication_succeeded": false,
+    "snapserver_tcp_22_connected_from_agent_101_vm": true,
+    "snapserver_candidate_audio_control_http_ports_timed_out_from_agent_101_vm": true,
     "snapserver_settings_confirmed": false,
     "pico_wifi_bluetooth_hardware_confirmed": false
   }

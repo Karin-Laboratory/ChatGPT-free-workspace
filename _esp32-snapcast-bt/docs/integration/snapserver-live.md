@@ -59,3 +59,17 @@ Permission denied, please try again.
 Permission denied, please try again.
 masataka@192.168.0.40: Permission denied (publickey,password).
 ~~~
+
+## 2026-10-20 FW変更後の再調査
+
+07:34 JST時点で、依頼された直接SSHと同じ既存経路を再試行した。SSHは引き続き `Permission denied (publickey,password)` となり、接続先確認・systemctl・設定・version・listen socketの各リモートコマンドは実行されていない。別認証情報は試していない。
+
+agent-101-vmからのTCP確認では22番が接続し、Snapcast候補の1704/1705/1780は各2秒でtimeout。raspi2からは22/1704/1705/1780が各2秒でtimeout。これらはtimeoutの観測記録であり、FW、経路、listen/bind設定、ホスト状態を特定するものではない。したがってライブのSnapserver設定、Server.GetStatus、音声形式、ストリーム、接続クライアントは依然未取得。
+
+実施したSSHコマンド:
+
+~~~sh
+ssh -o ConnectTimeout=5 192.168.0.40 'hostname; whoami; cat /etc/os-release; hostname -I; systemctl status snapserver --no-pager; systemctl cat snapserver; snapserver --version; ss -lntp'
+~~~
+
+SSHエラーは前節記録と同じ。接続先上ではコマンド実行なし。

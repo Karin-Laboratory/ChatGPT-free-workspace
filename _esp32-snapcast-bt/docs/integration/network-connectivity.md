@@ -31,3 +31,7 @@ ssh -o HostName=SNAPSERVER_HOST homeaudio-40-vm 'hostname; date -Is'
 ## Direct SSH from agent-101-vm (2026-10-20)
 
 At the user's direction, retried the specified direct route from the existing `masataka` session: `ssh -o ConnectTimeout=5 192.168.0.40 'hostname; whoami; cat /etc/os-release | sed -n "1,8p"; hostname -I'`. The SSH service reached authentication and rejected the existing credentials with `Permission denied (publickey,password)`. No remote command ran. Therefore SSH transport from agent-101-vm reaches an SSH endpoint, but successful access and the endpoint's identity are not verified. No alternate account/key/password was tried. The earlier raspi2 timeouts and this SSH authentication denial are consistent with different network paths or host-side source restrictions, but the cause cannot be isolated without server-side evidence. No firewall/routing changes were made.
+
+## Retest after user's firewall change (2026-10-20 07:34 JST)
+
+Repeated the direct SSH command from agent-101-vm; authentication was still rejected (`Permission denied (publickey,password)`), so no remote command ran. TCP probes with a 2-second timeout from agent-101-vm: port 22 connected; 1704, 1705 and 1780 timed out. Equivalent probes from raspi2 to 22, 1704, 1705 and 1780 all timed out. These are connection observations only: a timeout does not show whether a service is listening or identify a firewall/route cause. No network settings were changed. The different SSH reachability from the two source machines remains unexplained.
