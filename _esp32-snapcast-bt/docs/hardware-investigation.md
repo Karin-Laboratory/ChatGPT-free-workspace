@@ -325,4 +325,4 @@ flash_size=undetermined (first two pages identical/erased)
 | USB serialとの個体照合 | **CONFIRMED（descriptor値一致）** | sysfsで確認したserialを補助プローブが直接descriptorから照合し、Picoboot PC_READを送る対象を1台に限定した。serialの真正性は証明しない。 |
 | Pico W互換／Wi-Fi／Bluetooth | **UNKNOWN** | この照会からは無線チップ、アンテナ、配線を確認できない。RP2040 B2のROM応答はCYW43439等の存在を示さない。 |
 
-補助ソース、SDKヘッダー、ビルド用libusb headers、プローブ実行ファイルは一時領域から削除した。APTパッケージ由来のpicotoolバイナリはユーザー領域に残した。追加の低電圧・USB切断ログはなく、全フラッシュ取得、フラッシュID取得、書き込み／消去／リセット、RAM実行、SWD、RPI-RP2 mountは未実施。
+raspi2上に一時展開した補助ソース、SDKヘッダー、ビルド用libusb headers、プローブ実行ファイルは削除した。APTパッケージ由来のpicotoolバイナリはユーザー領域に残した。追加の低電圧・USB切断ログはなく、全フラッシュ取得、フラッシュID取得、書き込み／消去／リセット、RAM実行、SWD、RPI-RP2 mountは未実施。
