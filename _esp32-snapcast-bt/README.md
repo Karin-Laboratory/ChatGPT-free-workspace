@@ -1,19 +1,20 @@
 # Fake Pico (RP2040) Wi-Fi Snapcast → Bluetooth HK speaker
 
 Status: feasibility / hardware identification (2026-10-20)
-This project was initially scoped for ESP32; target changed to the user's previously examined **Pico-compatible RP2040 clone**, revision B2, 2 MiB flash.
+This project was initially scoped for ESP32; target changed to a Pico-compatible clone previously reported as RP2040 revision B2 with 2 MiB flash. **The USB-attached board investigated on 2026-10-20 has not yet been matched to that earlier unit or independently verified for MCU revision/flash capacity.** See [hardware investigation](docs/hardware-investigation.md).
 
 ## Confirmed hardware vs outstanding
-- Confirmed on target: RP2040 rev B2, 2 MiB flash, RP2 bootloader.
-- NOT confirmed on target: Pico W-compatible CYW43439 Wi-Fi/Bluetooth radio, any radio wiring, onboard antenna.
+- Confirmed on the current USB observation: Raspberry Pi RP2 Boot USB identity, serial `E0C9125B0D9B`, and BOOTSEL mass-storage/vendor-specific interfaces. RP2 Boot descriptors do not authenticate the silicon.
+- Reported by the earlier investigation, but NOT re-confirmed on the current USB-attached unit: RP2040 rev B2 and 2 MiB flash. The UF2 boot volume's reported 128 MiB is not the flash size.
+- NOT confirmed on the current unit: Pico W-compatible CYW43439 Wi-Fi/Bluetooth radio, radio wiring, or onboard antenna.
 - Do not assume a board marketed as Pico/Pico W actually contains or wires up CYW43439.
-- Crucial correction: genuine Pico W's CYW43439 and current software DO support Bluetooth Classic, not just BLE; Arduino-Pico provides a BluetoothAudio A2DP Source implementation. This remains conditional on compatible hardware.
+- Genuine Pico W's CYW43439 and current software support Bluetooth Classic as well as BLE; Arduino-Pico provides a BluetoothAudio A2DP Source implementation. This remains conditional on compatible hardware and wiring.
 
 ## Goal
 Wi-Fi (Snapserver) -> Snapclient protocol -> decoded PCM -> SBC/A2DP Source (BT Classic) -> Harman Kardon speaker.
 
 ## Preferred software experiment
-- Arduino-Pico / BluetoothAudio.h A2DP Source example first, on a Pico W-compatible radio setup.
+- Arduino-Pico / BluetoothAudio.h A2DP Source example first, only after a compatible radio setup is verified.
 - Reference: https://arduino-pico.readthedocs.io/en/latest/a2dp.html
 - Reference: https://www.raspberrypi.com/news/new-functionality-bluetooth-for-pico-w/
 - Explore https://github.com/pschatzmann/arduino-snapclient and RP2040 discussion https://github.com/pschatzmann/arduino-snapclient/discussions/13
