@@ -326,3 +326,44 @@ flash_size=undetermined (first two pages identical/erased)
 | Pico W互換／Wi-Fi／Bluetooth | **UNKNOWN** | この照会からは無線チップ、アンテナ、配線を確認できない。RP2040 B2のROM応答はCYW43439等の存在を示さない。 |
 
 raspi2上に一時展開した補助ソース、SDKヘッダー、ビルド用libusb headers、プローブ実行ファイルは削除した。APTパッケージ由来のpicotoolバイナリはユーザー領域に残した。追加の低電圧・USB切断ログはなく、全フラッシュ取得、フラッシュID取得、書き込み／消去／リセット、RAM実行、SWD、RPI-RP2 mountは未実施。
+
+
+## Full investigation addendum (2026-10-20 06:55 JST)
+
+SSH alias raspi2, user codex, read-only. Executed checks:
+
+~~~sh
+ssh raspi2 'date -Is; uname -a; cat /proc/device-tree/model; cat /etc/os-release; vcgencmd get_throttled; dmesg | tail -n 120; lsusb -d 2e8a:0003; lsusb -t; ls -l /dev/ttyACM* /dev/ttyUSB*'
+ssh raspi2 'for n in 1 2 3; do date -Is; lsusb -d 2e8a:0003; for d in /sys/bus/usb/devices/*; do [ -r "$d/idVendor" ] || continue; [ "$(cat "$d/idVendor")" = 2e8a ] || continue; [ "$(cat "$d/idProduct")" = 0003 ] || continue; cat "$d/serial"; done; dmesg | tail -n 8; [ "$n" = 3 ] || sleep 10; done'
+ssh raspi2 '/home/codex/.local/opt/picotool-2.1.1-raspbian-armhf/usr/bin/picotool version'
+ssh raspi2 '/home/codex/.local/opt/picotool-2.1.1-raspbian-armhf/usr/bin/picotool help info'
+ssh raspi2 '/home/codex/.local/opt/picotool-2.1.1-raspbian-armhf/usr/bin/picotool info -b --vid 0x2e8a --pid 0x0003'
+ssh raspi2 'lsusb -d 2e8a:0003; dmesg | tail -n 18; grep -E "RPI-RP2|sdb" /proc/mounts'
+~~~
+
+Picotool help confirms info basic (-b) and all (-a) modes. Relevant target output:
+
+~~~
+2026-10-20T06:55:25+09:00
+Linux raspi2 6.18.50+rpt-rpi-v7 #1 SMP Raspbian 1:6.18.50-1+rpt1 (2026-09-11) armv7l GNU/Linux
+Raspberry Pi 2 Model B Rev 1.1
+Raspbian GNU/Linux 13.6 (trixie)
+vcgencmd: Can't open device file: /dev/vcio_gencmd
+Bus 001 Device 041: ID 2e8a:0003 Raspberry Pi RP2 Boot
+USB path 1-1.5; serial E0C9125B0D9B; speed 12 Mbit/s
+Interfaces: Mass Storage + Vendor Specific
+RP2 ttyACM/ttyUSB: none
+picotool v2.1.1 (Linux, GNU-14.2.0, None)
+~~~
+
+Historic logs contain Undervoltage, USB disconnect and virtual disk READ error, followed by Voltage normalised. Three USB samples at 06:55:31/41/51 showed same serial; no new warning/disconnect after normalization. vcgencmd could not report throttled status, so voltage health is not fully proven.
+
+Read-only command after source/help review:
+
+~~~
+picotool info -b --vid 0x2e8a --pid 0x0003
+Program Information
+ none
+~~~
+
+Did not use serial selector or info all because known picotool paths may execute a RAM flash-ID helper. Serial was prechecked in sysfs. Did not mount virtual volume. No new ROM bytes; prior 0x03/B2 result retained, flash UNKNOWN. Wi-Fi/BT/markings UNKNOWN. No write, erase, reset, RAM execution, SWD or GPIO operation.
