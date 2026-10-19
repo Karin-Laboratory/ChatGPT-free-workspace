@@ -90,7 +90,23 @@ sdb    disk  128M   0  1
 
 CH340はRP2 Bootとは別のUSBハブポート（RP2は1-1.4、CH340は1-1.5）に列挙されている。CH340記述子はVID/PID `1a86:7523`、Product `USB Serial`、シリアル記述子なし、ドライバー `ch341`。これが当該基板上のUARTに接続されているか、どのピンに配線されているかは未確認。UARTを開くとDTR/RTS等で基板をリセットする可能性があるため、今回は開いていない。
 
-raspi2のdmesgでは調査時刻にUSBデバイス037が `2e8a:0003` として新規認識され、usb-storageが登録され、`sdb` と `RPI-RP2` パーティションが作成された。udev情報でもManufacturer/Product/Serialとインターフェースが一致した。無関係なUSB機器のログや識別子は記録から除外した。
+raspi2のdmesgから対象機器とブートディスクに関する実出力：
+
+```text
+[406924.441279] usb 1-1.4: new full-speed USB device number 37 using dwc_otg
+[406924.543947] usb 1-1.4: New USB device found, idVendor=2e8a, idProduct=0003, bcdDevice= 1.00
+[406924.544018] usb 1-1.4: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+[406924.544044] usb 1-1.4: Product: RP2 Boot
+[406924.544090] usb 1-1.4: Manufacturer: Raspberry Pi
+[406924.544120] usb 1-1.4: SerialNumber: E0C9125B0D9B
+[406924.545717] usb-storage 1-1.4:1.0: USB Mass Storage device detected
+[406925.562552] scsi 1:0:0:0: Direct-Access     RPI      RP2              3    PQ: 0 ANSI: 2
+[406925.568564] sd 1:0:0:0: [sdb] 262144 512-byte logical blocks: (134 MB/128 MiB)
+[406925.700550]  sdb: sdb1
+[406925.701563] sd 1:0:0:0: [sdb] Attached SCSI removable disk
+```
+
+udev情報でもManufacturer/Product/Serialとインターフェースが一致した。無関係なUSB機器のログや識別子は記録から除外した。
 
 ## ハードウェア判定
 
