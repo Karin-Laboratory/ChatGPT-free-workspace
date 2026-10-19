@@ -1,0 +1,36 @@
+{
+  "_comment": "Template only. Live Snapserver values were not retrieved; values below are null until measured. Never add the private Bluetooth address or secrets here.",
+  "snapserver": {
+    "host": null,
+    "audio_port": null,
+    "jsonrpc_port": null,
+    "http_port": null,
+    "stream_id": null,
+    "stream_name": null,
+    "codec": null,
+    "sample_rate": null,
+    "bits_per_sample": null,
+    "channels": null,
+    "chunk_ms": null,
+    "server_buffer_ms": null
+  },
+  "bluetooth": {
+    "device_name": "HK Onyx Studio",
+    "device_address": null,
+    "role": "A2DP_SOURCE",
+    "peer_role": "A2DP_SINK",
+    "paired_on_this_device": false,
+    "auto_reconnect": true,
+    "codec": null
+  },
+  "audio": {
+    "latency_offset_ms": null,
+    "buffer_ms": null
+  },
+  "evidence": {
+    "venue_peer_name_confirmed": true,
+    "venue_peer_address_recorded_locally_only": true,
+    "snapserver_settings_confirmed": false,
+    "pico_wifi_bluetooth_hardware_confirmed": false
+  }
+}
