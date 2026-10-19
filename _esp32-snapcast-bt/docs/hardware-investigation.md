@@ -158,3 +158,79 @@ udev情報でもManufacturer/Product/Serialとインターフェースが一致�
 ## 既存メモの修正点
 
 `_esp32-snapcast-bt/README.md` の「targetでRP2040 rev B2、2 MiB flashを確認済み」という表現は、今回のUSB個体との同一性と容量を確認できたかのように読めるため修正した。現状は「以前の調査で報告されたが、今回のUSB個体では未再確認」とする。Pico WのBluetooth Classic対応は公式仕様であり、クローンへの搭載・配線は未確認という区別は維持する。
+
+
+## 再接続後の再調査（2026-10-20 06:33–06:34 JST）
+
+ユーザーによる再接続後、raspi2から同じ読み取り専用手順で再観測した。USBの構成は前回と異なるが、RP2 BootのUSB serialは前回と同じ `E0C9125B0D9B`。
+
+実行コマンド（追加分）：
+
+```sh
+date -Is
+uname -a
+cat /proc/device-tree/model
+cat /etc/os-release
+lsusb
+lsusb -t
+ls -l /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
+udevadm info --query=all --path=/sys/bus/usb/devices/1-1.5
+lsusb -d 2e8a:0003 -v
+grep -E "sdb|RPI-RP2" /proc/mounts
+cat /proc/partitions
+dmesg | grep -E "2e8a|RP2 Boot|1a86|CH340|RPI|sdb|ttyUSB|ttyACM" | tail -n 70
+```
+
+実出力（raspi2・対象機器）：
+
+```text
+2026-10-20T06:33:57+09:00
+Linux raspi2 6.18.50+rpt-rpi-v7 #1 SMP Raspbian 1:6.18.50-1+rpt1 (2026-09-11) armv7l GNU/Linux
+Raspberry Pi 2 Model B Rev 1.1
+Raspbian GNU/Linux 13 (trixie) 13 trixie
+
+Bus 001 Device 041: ID 2e8a:0003 Raspberry Pi RP2 Boot
+/sys/bus/usb/devices/1-1.5 2e8a:0003
+manufacturer=Raspberry Pi
+product=RP2 Boot
+serial=E0C9125B0D9B
+
+/:  Bus 001.Port 001: Dev 001, Class=root_hub, Driver=dwc_otg/1p, 480M
+    |__ Port 001: Dev 002, Class=Hub, Driver=hub/5p, 480M
+        |__ Port 005: Dev 041, If 0, Class=Mass Storage, Driver=usb-storage, 12M
+        |__ Port 005: Dev 041, If 1, Class=Vendor Specific Class, Driver=[none], 12M
+
+/dev/ttyACM*: none
+/dev/ttyUSB*: none
+/proc/mounts: RPI-RP2/sdb entry absent
+
+8 16 131072 sdb
+8 17 131071 sdb1
+```
+
+前回はRP2 BootがUSBパス `1-1.4`、CH340が `1-1.5` で見えていた。再接続後の採取時点ではRP2 Bootが `1-1.5` にあり、CH340は `lsusb` とsysfsに見えず、TTYデバイスもなかった。RP2 Bootの同じUSB serialが再観測されたため同じUSB個体である可能性は高いが、serial descriptorが基板上のチップ固有値かは検証していない。基板そのものの真正性は依然として未確認。
+
+直前のdmesgにはCH340の接続・切断後、同じポートにRP2 Bootが列挙された履歴がある。さらにUSBストレージの列挙時に低電圧警告、デバイス切断、読み取りI/Oエラーが記録されていた：
+
+```text
+[408265.479754] hwmon hwmon1: Undervoltage detected!
+[408265.495704] sd 1:0:0:0: [sdb] 262144 512-byte logical blocks: (134 MB/128 MiB)
+[408266.630148] sd 1:0:0:0: [sdb] Unaligned partial completion (resid=3520, sector_sz=512)
+[408266.630441] I/O error, dev sdb, sector 40 op 0x0:(READ) flags 0x80700 phys_seg 1 prio class 2
+[408266.630484] usb 1-1.5: USB disconnect, device number 40
+[408267.919594] usb 1-1.5: new full-speed USB device number 41 using dwc_otg
+[408268.022950] usb 1-1.5: New USB device found, idVendor=2e8a, idProduct=0003, bcdDevice= 1.00
+[408268.023051] usb 1-1.5: Product: RP2 Boot
+[408268.023115] usb 1-1.5: SerialNumber: E0C9125B0D9B
+[408269.089992] sd 1:0:0:0: [sdb] 262144 512-byte logical blocks: (134 MB/128 MiB)
+[408273.799637] hwmon hwmon1: Voltage normalised
+```
+
+この低電圧警告とUSB切断・ストレージ読み取りエラーの時間的な近さは観測事実だが、原因とは断定できない。ストレージは未マウントで、読み取り／書き込みをこちらから実施していない。USBブートボリュームは再列挙後に `sdb` として存在している。現時点の追加確認では、`lsusb` と `/proc/partitions` 上でデバイスが残り、TTYはなく、マウントもない。
+
+### 再接続後の判定更新
+
+- USB serial一致により以前と同じUSB個体という見込みは上がった。ただし過去のB2／2 MiB調査時のserial記録がないため、当該測定結果との同一性は未確定。
+- USBポート番号が移動しており、CH340/TTYは現在のスナップショットでは見えない。UARTブリッジの存在やRP2040配線を新たに確認したわけではない。
+- RP2 Bootと仮想ドライブは残るが、直前にUSB切断と読み取りエラーがあった。これは実フラッシュ容量や無線部の判定を変えない。
+- 次の安全な確認は、ソフトウェア操作を増やさずraspi2の電源状態・USBケーブル・ハブ接続を目視確認し、低電圧警告が再発しない状態でUSB列挙が安定するか観察すること。その後に基板写真・部品刻印を確認する。ブートボリュームの読み書き、UARTのオープン、ファームウェア操作は引き続き不要。
