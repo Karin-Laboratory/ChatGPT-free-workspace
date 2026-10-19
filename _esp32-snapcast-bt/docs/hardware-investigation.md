@@ -262,3 +262,67 @@ command -v picotool
 - `command -v picotool` は出力なし。raspi2にpicotoolは見つからなかった。
 
 手順の「picotoolが未導入ならインストールせず停止」に従い、ここでハードウェア照会を停止した。picotoolのversion/help/infoコマンドは実行していない。MCU revision、フラッシュ容量、ブート情報の新しい読み取りは**未実施**であり、従前どおりUNKNOWN（USBだけでは未確認）。picotoolのインストール、権限変更、USB再接続、ストレージマウント、シリアル／SWD操作、書き込み、消去、リセット、RAM実行はいずれもしていない。
+
+
+## picotool導入と読み取り専用ハードウェア照会（2026-10-20 06:38–06:45 JST）
+
+### 電源・USB安定性ゲート
+
+実行コマンド：
+
+```sh
+date -Is
+vcgencmd get_throttled
+dmesg | tail -n 120
+lsusb -d 2e8a:0003
+lsusb -t
+# /sys/bus/usb/devices/* のVID:PID、Product、Serialを確認
+```
+
+`vcgencmd get_throttled` は `Can't open device file: /dev/vcio_gencmd` となり値を得られなかった。dmesgの最後の過去警告は以前記録した `Undervoltage detected!` と、その後の `Voltage normalised`。2026-10-20 06:38、06:39、06:41、06:42、06:45に確認し、正確なUSB serial `E0C9125B0D9B` の `2e8a:0003 RP2 Boot` は継続して列挙されていた。正常化以降に新しい低電圧警告、対象USB切断、sdb I/O errorは見つからず、picotool照会の前後でも接続は維持された。USBパスは `1-1.5`。この間もRPI-RP2はマウントしていない。
+
+### picotool導入
+
+raspi2で `apt-cache policy picotool` を確認し、Raspbian Trixie armhfリポジトリの `2.1.1+dfsg-1` が候補、未導入と分かった。昇格権限を使わずAPTからパッケージを取得し、SHA-256 `6e11b04e71659ba95582e49400509b2625912dec5180d4e0330a6a0da1da569d` をAPT metadataと照合して `/home/codex/.local/opt/picotool-2.1.1-raspbian-armhf` に展開した。依存ライブラリはraspi2に既に存在し、実行できた。system-wide登録、権限、udev設定は変更していない。
+
+実出力：
+
+```text
+Installed: (none)
+Candidate: 2.1.1+dfsg-1
+Architecture: armhf
+picotool v2.1.1 (Linux, GNU-14.2.0, None)
+```
+
+### 安全性のためのソース確認とコマンド選択
+
+公式 `raspberrypi/picotool` tag `2.1.1`（commit `de8ae5ac334e1126993f72a5c67949712fd1e1a4`）の `main.cpp` と `picoboot_connection.c` を確認した。[公式ソース](https://github.com/raspberrypi/picotool/tree/2.1.1)
+
+- `picotool info -a` はRP2040のflash size推定後に `con->flash_id()` を実行する。公式実装の `picoboot_flash_id()` は `PC_EXIT_XIP` を発行し、ヘルパーコードをRAMへ `PC_WRITE` し、`PC_EXEC` で実行してJEDEC IDを読む。この動作は今回禁止されているRAM転送・実行に当たるため、`info -a` は実行しなかった。
+- RP2040で `--ser` を指定したデバイス選択も、USB serialとflash IDを照合するため同じ `picoboot_flash_id()` に入る。そこで実行前にsysfsで対象serialを照合し、VID/PID限定の `picotool info -b --vid 0x2e8a --pid 0x0003` を使用した。確認時に一致する対象デバイスは1台だけだった。
+- `info -b` はProgram Informationを読む。device/debug情報を有効にせず、flash size/flash ID取得のコード経路には入らない。実出力は `Program Information / none`。ファームウェアのBinary Infoメタデータは報告されなかった。
+- Silicon revisionとflash prefixは、公式2.1.1の `picoboot_read()` だけを使う補助プローブで取得した。USB descriptorでVID/PIDとserialを完全一致させ、vendor bulk interface 1（IN `0x84`、OUT `0x03`）のみをclaim。バイナリから残ったpicoboot操作関数は `picoboot_read` のみであることを `nm` で確認した。PC_WRITE／EXEC／flash erase／reboot／OTP write／flash ID関数はリンクされていない。デバイスへ送ったPicobootコマンドはPC_READのみ。
+- PC_READはROMの1 byteと外付けflash先頭の512 bytesだけ。flash全体のダンプ、USBストレージの読み書き、RAMへのプログラム転送／実行はしていない。
+
+### 実機出力と判定
+
+補助プローブの実出力：
+
+```text
+target=2e8a:0003 serial=E0C9125B0D9B interface=1 IN=0x84 OUT=0x03
+rom_version_byte=0x03
+flash_size=undetermined (first two pages identical/erased)
+```
+
+| 項目 | 判定 | 結果・根拠 |
+|---|---|---|
+| RP2 Boot／BOOTSEL | **CONFIRMED** | USB descriptor `2e8a:0003` と同じserial、Mass Storage＋vendor bulk interface。接続状態は照会後も維持。 |
+| RP2040 ROM revision | **CONFIRMED（RP2040互換ROM応答）** | RP2040 boot ROMのrevision byte（address `0x13`）をPC_READし、`0x03`。公式picotool 2.1.1の対応表で `3 → B2`。USB descriptor等は偽装可能なため、シリコン真正性の暗号学的証明ではない。 |
+| 外付けSPI flash容量 | **UNKNOWN** | flash先頭512 bytesで2ページが同一と検出され、公式picotoolの容量推定と同様に境界比較へ進めなかった。これは消去状態を示唆するが、全領域を調べておらず消去済みと確定できない。容量は未判定。 |
+| Flash JEDEC ID | **UNKNOWN／未取得** | 取得には上記のRAM helper実行が必要となるため禁止制約に従い取得していない。 |
+| ROM/boot情報 | **CONFIRMED（限定）** | ROM revision byte `0x03` と現在のRP2 Bootモードを取得。RP2040向けpicotoolはROM version byteをrevisionに変換する。ROM全体、ROM hash、他のboot diagnosticsは取得していない。 |
+| 現在のアプリfirmware metadata | **CONFIRMED（Binary Infoなし）** | 安全な `picotool info -b` は `Program Information: none`。アプリ内容の有無や非Binary-Info形式のデータは判定しない。 |
+| USB serialとの個体照合 | **CONFIRMED（descriptor値一致）** | sysfsで確認したserialを補助プローブが直接descriptorから照合し、Picoboot PC_READを送る対象を1台に限定した。serialの真正性は証明しない。 |
+| Pico W互換／Wi-Fi／Bluetooth | **UNKNOWN** | この照会からは無線チップ、アンテナ、配線を確認できない。RP2040 B2のROM応答はCYW43439等の存在を示さない。 |
+
+補助ソース、SDKヘッダー、ビルド用libusb headers、プローブ実行ファイルは一時領域から削除した。APTパッケージ由来のpicotoolバイナリはユーザー領域に残した。追加の低電圧・USB切断ログはなく、全フラッシュ取得、フラッシュID取得、書き込み／消去／リセット、RAM実行、SWD、RPI-RP2 mountは未実施。
