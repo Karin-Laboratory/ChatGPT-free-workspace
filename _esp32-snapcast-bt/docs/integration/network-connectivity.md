@@ -35,3 +35,9 @@ At the user's direction, retried the specified direct route from the existing `m
 ## Retest after user's firewall change (2026-10-20 07:34 JST)
 
 Repeated the direct SSH command from agent-101-vm; authentication was still rejected (`Permission denied (publickey,password)`), so no remote command ran. TCP probes with a 2-second timeout from agent-101-vm: port 22 connected; 1704, 1705 and 1780 timed out. Equivalent probes from raspi2 to 22, 1704, 1705 and 1780 all timed out. These are connection observations only: a timeout does not show whether a service is listening or identify a firewall/route cause. No network settings were changed. The different SSH reachability from the two source machines remains unexplained.
+
+## Retest after subsequent firewall change (2026-10-20 07:38 JST)
+
+SSH from agent-101-vm still failed authentication, but TCP connects to 22, 1704, 1705 and 1780 all succeeded. From raspi2, the same four TCP probes each timed out (2-second timeout). A read-only JSON-RPC POST to the user-designated host's port 1780 `/jsonrpc` from agent-101-vm returned HTTP 200 and `Server: Snapcast`; `Server.GetStatus` succeeded. API server metadata identified the Snapserver host as `homeaudio-40-vm` running Debian GNU/Linux 13 (trixie), x86_64. No IP/MAC/client hardware IDs are recorded here.
+
+Thus the Snapcast HTTP/API path is reachable from agent-101-vm but not raspi2 at this observation time. The cause of the source-dependent result is still unknown; no firewall, route, or server setting was changed. TCP accept alone does not verify the application role of 1704/1705. Port 1780's HTTP JSON-RPC role is directly confirmed by the response.

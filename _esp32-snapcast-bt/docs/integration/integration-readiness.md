@@ -6,16 +6,16 @@
 
 - Venue shows the Bluetooth peer named HK Onyx Studio paired, trusted and connected; Audio Sink and AVRCP UUIDs are present. Numeric model variant is unresolved.
 - Venue runs BlueZ 5.82, PipeWire 1.4.2 and WirePlumber 0.5.8. BlueZ link state was connected, but SSH user's PipeWire graph showed only Dummy Output; codec and active A2DP route remain UNKNOWN.
-- Snapserver's user-supplied host did not respond to TCP candidates 1704/1705/1780 or the HTTP JSON-RPC request from raspi2. The SSH alias failed DNS; using its configuration with the supplied address failed authentication. After the user's firewall change, direct SSH from agent-101-vm still reached authentication but was rejected; only TCP 22 connected from that VM, while candidate Snapcast ports timed out. No remote command ran. Version, live stream, codec, rates, ports and buffers remain UNKNOWN.
-- Existing historic stream snippet (FLAC, 48000:16:2, chunk_ms=20) is not verified as current. Do not configure firmware from it.
+- Snapserver SSH still rejects the existing credentials, but the read-only HTTP JSON-RPC endpoint is now reachable from agent-101-vm. `Server.GetStatus` identifies Snapserver 0.31.0 and a playing `HomeAudio` pipe stream using FLAC, 48 kHz/16-bit/stereo, `chunk_ms=20`; current FIFO path is `/run/snapserver/snapfifo`. It reports 3 connected clients and one disconnected Snapweb client. raspi2 still times out to ports 22/1704/1705/1780; agent-101-vm TCP connects to all four. Full server config, buffer settings, mDNS and sound-server state remain UNKNOWN.
+- The old snippet's format/chunk values match the current API result, but its `/tmp/snapfifo` path is stale; the current path is `/run/snapserver/snapfifo`.
 - RP2040 clone radio hardware is still UNKNOWN per the primary hardware investigation. RP2040 alone has no Wi-Fi or Bluetooth.
 
 ## Readiness gates
 
-1. Resolve the direct SSH authentication rejection; the SSH transport is reachable from agent-101-vm, but the existing credentials are not accepted. Then inspect status/config and run Server.GetStatus without service changes.
+1. Obtain authorized read-only access to the Snapserver host to inspect the service unit, full config, listener roles and buffering. JSON-RPC status is available from agent-101-vm without SSH.
 2. Identify Pico radio/antenna/pin wiring and flash capacity from markings/schematic.
 3. Establish a real A2DP audio node on Venue and identify the codec negotiated during actual playback (requires a separately authorized audio test; none was sent).
-4. If hardware supports it, prototype Snapcast server-side PCM 48kHz/16-bit/stereo and measure buffering/clock drift. Payload is 192 kB/s; 264 KiB SRAM is shared by network, Bluetooth, SBC, protocol and buffers.
+4. Current stream is FLAC at 48kHz/16-bit/stereo (raw PCM equivalent 192 kB/s). A constrained receiver must implement Snapcast framing and FLAC decode or the server operator can consider a PCM stream; neither RP2040 radio capability nor an additional PCM stream is confirmed. Measure buffering and clock drift before judging fit in 264 KiB SRAM.
 5. Pair the Pico as a new independent A2DP Source; Venue link keys are not portable.
 
 Snapserver setting changes or additional streams were not made. Bluetooth scan/pair/connect/disconnect or audio transmission were not performed. No Pico firmware or USB storage was modified.

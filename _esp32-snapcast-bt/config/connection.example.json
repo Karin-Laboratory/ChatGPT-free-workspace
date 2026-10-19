@@ -1,18 +1,23 @@
 {
-  "_comment": "Template only. Live Snapserver values were not retrieved; values below are null until measured. Never add the private Bluetooth address or secrets here.",
+  "_comment": "Measured from read-only Server.GetStatus on 2026-10-20. Set host locally; private LAN address and Bluetooth address are intentionally omitted. Port roles 1704/1705 are standard-default candidates, while 1780 JSON-RPC was directly confirmed.",
   "snapserver": {
     "host": null,
-    "audio_port": null,
-    "jsonrpc_port": null,
-    "http_port": null,
-    "stream_id": null,
-    "stream_name": null,
-    "codec": null,
-    "sample_rate": null,
-    "bits_per_sample": null,
-    "channels": null,
-    "chunk_ms": null,
-    "server_buffer_ms": null
+    "audio_port": 1704,
+    "jsonrpc_port": 1705,
+    "http_port": 1780,
+    "stream_id": "HomeAudio",
+    "stream_name": "HomeAudio",
+    "codec": "flac",
+    "sample_rate": 48000,
+    "bits_per_sample": 16,
+    "channels": 2,
+    "chunk_ms": 20,
+    "server_buffer_ms": null,
+    "server_version": "0.31.0",
+    "protocol_version": 1,
+    "control_protocol_version": 1,
+    "stream_source": "pipe:///run/snapserver/snapfifo",
+    "status": "playing"
   },
   "bluetooth": {
     "device_name": "HK Onyx Studio",
@@ -33,8 +38,11 @@
     "snapserver_ssh_endpoint_reached_from_agent_101_vm": true,
     "snapserver_ssh_authentication_succeeded": false,
     "snapserver_tcp_22_connected_from_agent_101_vm": true,
-    "snapserver_candidate_audio_control_http_ports_timed_out_from_agent_101_vm": true,
-    "snapserver_settings_confirmed": false,
+    "snapserver_http_jsonrpc_confirmed_from_agent_101_vm": true,
+    "snapserver_tcp_ports_1704_1705_1780_connected_from_agent_101_vm": true,
+    "snapserver_tcp_ports_22_1704_1705_1780_timed_out_from_raspi2": true,
+    "snapserver_live_stream_status_confirmed": true,
+    "snapserver_full_configuration_confirmed": false,
     "pico_wifi_bluetooth_hardware_confirmed": false
   }
 }

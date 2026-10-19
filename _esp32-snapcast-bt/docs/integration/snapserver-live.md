@@ -73,3 +73,27 @@ ssh -o ConnectTimeout=5 192.168.0.40 'hostname; whoami; cat /etc/os-release; hos
 ~~~
 
 SSHエラーは前節記録と同じ。接続先上ではコマンド実行なし。
+
+## 2026-10-20 07:38 JST FW変更後の再調査
+
+### 接続状況と識別
+
+同じ直接SSHを再試行したが、既存認証情報は `Permission denied (publickey,password)` で拒否され、リモートコマンドは実行されなかった。一方、agent-101-vmからTCP 22/1704/1705/1780はすべて接続可能となった。raspi2から同じ4ポートへの2秒TCP確認はすべてtimeout。agent-101-vmからHTTP JSON-RPCにアクセスし、応答のserver host情報は `homeaudio-40-vm`, `Debian GNU/Linux 13 (trixie)`, `x86_64`。これはSSHログインではなくSnapserver API応答による識別である。
+
+実行した読み取り専用リクエスト:
+
+~~~sh
+curl -i -sS --max-time 5 -H 'Content-Type: application/json' -d '{"id":1,"jsonrpc":"2.0","method":"Server.GetStatus"}' http://SNAPSERVER_HOST:1780/jsonrpc
+~~~
+
+HTTP応答 `200 OK`, `Server: Snapcast`, `Content-Type: application/json`。プライベートIP、MAC、クライアント固有IDはこの記録では省略した。
+
+### APIから確認した稼働情報
+
+- Snapserver version `0.31.0`; server `protocolVersion=1`, `controlProtocolVersion=1`。
+- stream ID/name `HomeAudio`, status `playing`。URI scheme `pipe`, source path `/run/snapserver/snapfifo`。source properties: `chunk_ms=20`, `codec=flac`, `sampleformat=48000:16:2` (48 kHz, 16-bit, stereo)。これは `Server.GetStatus` の現在値であり、以前の `/tmp/snapfifo` の記録とはsource pathが異なる。
+- 4 groupsはいずれもHomeAudioを参照。接続中clientは3台 (raspi2 1台、orangepizero名のLinux client 2台)、Snapweb client 1台は切断中。個体ID/IP/MACは省略。全clientのreported latencyは0 ms、mute=false。volumeは接続中で50%, 77%, 80%; disconnected Snapwebは25%。client Snapclient versionは0.31.0、protocolVersion=2 (Snapweb 0.9.3, protocolVersion=2)。
+- API responseにserver wall-clock fieldは含まれない。client lastSeen timestampsは得られるが、ここではサーバー時刻として扱わない。
+- `Server.GetStatus` は実効stream URIと稼働状態を確認したが、systemd unit全文、設定ファイル、buffer設定、mDNS設定、実際のlisten socket/portの用途までは取得していない。TCP接続成功だけでは1704/1705の役割を確証できない。1780はHTTP JSON-RPC応答により確認済み。1704 audio/1705 controlはSnapcast標準defaultとの照合に基づく推定候補。
+
+この取得でPCMではなくFLAC streamが現行稼働していることが確定した。組み込みreceiverはSnapcast protocol framingとFLAC decodeが必要となる。server設定を変えておらず、PCM追加streamも未作成。
