@@ -1,0 +1,33 @@
+name: Snapcast host validation
+
+on:
+  push:
+    paths:
+      - "_esp32-snapcast-bt/**"
+      - ".github/workflows/snapcast-host.yml"
+  pull_request:
+    paths:
+      - "_esp32-snapcast-bt/**"
+      - ".github/workflows/snapcast-host.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure C++ host tests
+        run: cmake -S _esp32-snapcast-bt -B build/snapcast-host -DBUILD_TESTING=ON
+      - name: Build host parser
+        run: cmake --build build/snapcast-host --parallel 2
+      - name: Run C++ protocol tests
+        run: ctest --test-dir build/snapcast-host --output-on-failure
+      - name: Run Python preflight unit tests
+        working-directory: _esp32-snapcast-bt
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+
+# Firmware/UF2 jobs are intentionally absent until the exact radio hardware,
+# wiring, and supported A2DP Source software stack have been proven.

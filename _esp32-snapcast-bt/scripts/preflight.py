@@ -30,6 +30,10 @@ def main():
         print("FAIL: Server.GetStatus returned error", file=sys.stderr)
         return 2
     server = payload.get("result", {}).get("server", {})
+    server_metadata = server.get("server", {})
+    server_info = server_metadata.get("snapserver", {}) if isinstance(server_metadata, dict) else {}
+    if not server_info:
+        server_info = server.get("snapserver", {})
     streams = server.get("streams", [])
     selected = [s for s in streams if s.get("id") == a.stream]
     if not selected:
@@ -42,7 +46,7 @@ def main():
     observed_codec = str(observed_codec).lower() if observed_codec is not None else None
     observed_status = stream.get("status")
     print(json.dumps({
-        "server_version": server.get("version"),
+        "server_version": server_info.get("version") or server.get("version"),
         "stream": a.stream,
         "status": observed_status,
         "codec": observed_codec,

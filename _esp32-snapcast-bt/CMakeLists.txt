@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.16)
+project(snapcast_host_protocol LANGUAGES CXX)
+
+include(CTest)
+add_library(snapcast_protocol src/snapcast_protocol.cpp)
+target_include_directories(snapcast_protocol PUBLIC include)
+target_compile_features(snapcast_protocol PUBLIC cxx_std_17)
+target_compile_options(snapcast_protocol PRIVATE -Wall -Wextra -Wpedantic -Werror)
+
+if(BUILD_TESTING)
+  add_executable(snapcast_protocol_tests tests/snapcast_protocol_tests.cpp)
+  target_link_libraries(snapcast_protocol_tests PRIVATE snapcast_protocol)
+  target_compile_options(snapcast_protocol_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  add_test(NAME snapcast_protocol_tests COMMAND snapcast_protocol_tests)
+endif()

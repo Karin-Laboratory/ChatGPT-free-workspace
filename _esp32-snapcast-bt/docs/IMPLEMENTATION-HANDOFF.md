@@ -40,3 +40,13 @@ The Snapserver and HK endpoints are now identified, but the RP2040 board's wirel
 ## Snapshot references
 
 `docs/hardware-investigation.md`, `docs/research/`, `docs/integration/snapserver-live.md`, `docs/integration/hk-bluetooth.md`, `docs/integration/integration-readiness.md`.
+
+## Host-only implementation progress (2026-10-20)
+
+- Rechecked the target through raspi2. USB serial `E0C9125B0D9B` remained present in three samples over ten seconds. `vcgencmd get_throttled` is unavailable; dmesg retains earlier undervoltage/USB I/O errors and a later `Voltage normalised`, with no new events in the latest tail. Installed picotool v2.1.1 `info -b --vid 0x2e8a --pid 0x0003` remains read-only and reports `Program Information: none`. The earlier bounded ROM read reported revision byte 0x03 => RP2040-compatible B2; this session did not repeat that ROM read. Flash capacity and board radio remain UNKNOWN.
+- Added a host C++17 Snapcast frame parser and typed FLAC codec-header / Wire Chunk readers with fixed input bounds. Added JSON-message framing for Hello/ClientInfo. These are host-testable protocol primitives, not a complete Snapclient: no TCP lifecycle, complete handshake/auth, time synchronization, FLAC decoder, jitter scheduling, A2DP or Bluetooth controller code exists.
+- Added CMake/CTest and GitHub Actions host checks, along with a read-only JSON-RPC preflight. The workflow does not build firmware or emit UF2 because the radio hardware gate is closed.
+- Current HomeAudio is FLAC. The protocol layer preserves codec header and chunk bytes; it does not decode FLAC or turn them into PCM. PCM-only operation against HomeAudio is not implemented or considered complete.
+- Hardware target selection (Arduino-Pico vs Pico SDK/BTstack), Pico build, UF2 automation, A2DP Source, radio concurrency, flash procedure and validated recovery remain pending hardware identification and later approval. See `docs/flash-and-recovery.md`.
+
+Protocol structure follows the [official Snapcast binary protocol](https://github.com/snapcast/snapcast/blob/develop/doc/binary_protocol.md). This first host implementation tests framing and typed payload bounds only.

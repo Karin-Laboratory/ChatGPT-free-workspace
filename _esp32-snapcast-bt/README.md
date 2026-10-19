@@ -1,6 +1,6 @@
 # Fake Pico (RP2040) Wi-Fi Snapcast → Bluetooth HK speaker
 
-Status: feasibility / hardware identification (2026-10-20)
+Status: hardware gate blocked; host protocol groundwork only (2026-10-20)
 This project was initially scoped for ESP32; target changed to a Pico-compatible clone previously reported as RP2040 revision B2 with 2 MiB flash. **The USB-attached board investigated on 2026-10-20 has not yet been matched to that earlier unit or independently verified for MCU revision/flash capacity.** See [hardware investigation](docs/hardware-investigation.md).
 
 ## Confirmed hardware vs outstanding
@@ -44,3 +44,9 @@ Wi-Fi (Snapserver) -> Snapclient protocol -> decoded PCM -> SBC/A2DP Source (BT 
 - Target choice is Pico clone, not ESP32. No ESP-IDF build targets in this project.
 - Never save Wi-Fi credentials, pairing secrets or private addresses in Git.
 - First produce reproducible test builds and logs, then the end-to-end client.
+
+## Current implementation boundary
+- `include/` and `src/` contain a host-testable C++17 Snapcast framing/typed-payload parser. It is not a complete Snapclient and does not decode FLAC.
+- `scripts/preflight.py` performs read-only Snapserver JSON-RPC status verification; it does not access Pico or Bluetooth.
+- CMake/CTest and `.github/workflows/snapcast-host.yml` validate host code only. The workflow intentionally creates no UF2 until exact radio hardware and a supported stack are proven and a real target firmware exists.
+- See [implementation handoff](docs/IMPLEMENTATION-HANDOFF.md) and [build/write/recovery gate](docs/flash-and-recovery.md).

@@ -367,3 +367,18 @@ Program Information
 ~~~
 
 Did not use serial selector or info all because known picotool paths may execute a RAM flash-ID helper. Serial was prechecked in sysfs. Did not mount virtual volume. No new ROM bytes; prior 0x03/B2 result retained, flash UNKNOWN. Wi-Fi/BT/markings UNKNOWN. No write, erase, reset, RAM execution, SWD or GPIO operation.
+
+## Implementation-stage hardware recheck (2026-10-20 07:55 JST)
+
+The implementation stage repeated only the electrical/USB preflight and safe picotool basic-info query. `vcgencmd get_throttled` still cannot access `/dev/vcio_gencmd`; current throttle flags are therefore **UNKNOWN**. dmesg includes historical undervoltage, USB disconnect, and virtual-volume read errors followed by `Voltage normalised`; no newer entries appeared in the latest tail. The target USB serial `E0C9125B0D9B` was present at 07:55:25, 07:55:30, and 07:55:35 on USB path `1-1.5`, product `RP2 Boot`.
+
+Commands executed:
+
+~~~sh
+ssh raspi2 'date -Is; hostname; vcgencmd get_throttled; dmesg | grep -E "Undervoltage detected|Voltage normalised|2e8a|RP2 Boot|USB disconnect|I/O error" | tail -n 35; lsusb -d 2e8a:0003; lsusb -t'
+ssh raspi2 '... three VID:PID + exact serial sysfs samples, 5 seconds apart ...'
+ssh raspi2 '/home/codex/.local/opt/picotool-2.1.1-raspbian-armhf/usr/bin/picotool version'
+ssh raspi2 '/home/codex/.local/opt/picotool-2.1.1-raspbian-armhf/usr/bin/picotool info -b --vid 0x2e8a --pid 0x0003'
+~~~
+
+picotool result: `v2.1.1 (Linux, GNU-14.2.0, None)` and `Program Information / none`. This `info -b` query did not obtain ROM revision or flash ID. Revision B2 remains **CONFIRMED for an RP2040-compatible ROM response from the earlier bounded PC_READ** (ROM byte `0x03` at `0x13`, interpreted using official picotool mapping), and was not independently re-read today. The USB serial matches the prior target observation, but does not authenticate the silicon. Flash part/capacity remains **UNKNOWN**. Pico W compatibility, CYW43439, antenna, radio wiring, Wi-Fi, and Bluetooth Classic A2DP Source remain **UNKNOWN**. No write, erase, reset, RAM execution, mass-storage mount, SWD, or radio operation occurred.
