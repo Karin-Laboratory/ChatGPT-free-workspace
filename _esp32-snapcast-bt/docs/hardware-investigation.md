@@ -234,3 +234,31 @@ serial=E0C9125B0D9B
 - USBポート番号が移動しており、CH340/TTYは現在のスナップショットでは見えない。UARTブリッジの存在やRP2040配線を新たに確認したわけではない。
 - RP2 Bootと仮想ドライブは残るが、直前にUSB切断と読み取りエラーがあった。これは実フラッシュ容量や無線部の判定を変えない。
 - 次の安全な確認は、ソフトウェア操作を増やさずraspi2の電源状態・USBケーブル・ハブ接続を目視確認し、低電圧警告が再発しない状態でUSB列挙が安定するか観察すること。その後に基板写真・部品刻印を確認する。ブートボリュームの読み書き、UARTのオープン、ファームウェア操作は引き続き不要。
+
+
+## picotool読み取り専用調査ゲート（2026-10-20 06:36 JST）
+
+指定手順 `docs/next-readonly-investigation.md` に沿い、picotoolを起動する前に電源ログとUSB接続を再確認した。
+
+実行コマンド（抜粋）：
+
+```sh
+date -Is
+uname -a
+vcgencmd get_throttled
+dmesg | tail -n 120
+lsusb -d 2e8a:0003
+lsusb -t
+# 対象の /sys/bus/usb/devices/* から VID:PID、製品名、serial を確認
+ls -l /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
+command -v picotool
+```
+
+結果：
+
+- `vcgencmd get_throttled` は `Can't open device file: /dev/vcio_gencmd` となり、現在のthrottledビット値は取得できなかった。
+- 直近のdmesgには以前の `Undervoltage detected!` と、その後の `Voltage normalised` が残っている。再確認時点で新しい低電圧警告はなく、同じRP2 BootデバイスがUSBに列挙されていた。
+- 06:36:29と06:36:45の両サンプルで同じUSB serialを持つ `2e8a:0003 RP2 Boot` がUSB port 1-1.5に存在した。直近のUSB再列挙から約3分以上経過しても新しい切断・列挙イベントは見られず、この観測中は安定していた。TTYノードはなかった。
+- `command -v picotool` は出力なし。raspi2にpicotoolは見つからなかった。
+
+手順の「picotoolが未導入ならインストールせず停止」に従い、ここでハードウェア照会を停止した。picotoolのversion/help/infoコマンドは実行していない。MCU revision、フラッシュ容量、ブート情報の新しい読み取りは**未実施**であり、従前どおりUNKNOWN（USBだけでは未確認）。picotoolのインストール、権限変更、USB再接続、ストレージマウント、シリアル／SWD操作、書き込み、消去、リセット、RAM実行はいずれもしていない。
